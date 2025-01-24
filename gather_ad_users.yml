@@ -1,0 +1,24 @@
+- name: Сбор пользователей из AD
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Проверка доступности команды getent
+      command: which getent
+      register: getent_check
+      failed_when: getent_check.rc != 0
+      changed_when: no
+
+    - name: Сбор списка пользователей из AD
+      command: getent passwd
+      register: ad_users
+
+    - name: Сохранение списка пользователей на контроллере
+      local_action:
+        module: copy
+        content: "{{ inventory_hostname }}:\n{{ ad_users.stdout }}"
+        dest: "/tmp/ad_users_{{ inventory_hostname }}.txt"
+
+    - name: Отображение собранных пользователей
+      debug:
+        msg: "На хосте {{ inventory_hostname }} найдены пользователи:\n{{ ad_users.stdout }}"
